@@ -89,6 +89,10 @@ func NewBucketManager(config BucketConfig, storageHandle storage.StorageHandle) 
 		c = lru.NewCache(util.MiBsToBytes(config.StatCacheMaxSizeMB))
 	}
 
+	// TODO: load stat cache from disk if it exists
+	// TODO: where is the type cache and what is it? Does it use the same cache
+	// file as the stat cache?
+
 	bm := &bucketManager{
 		config:          config,
 		storageHandle:   storageHandle,

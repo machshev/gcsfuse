@@ -226,24 +226,30 @@ func createFileCacheHandler(cfg *ServerConfig) (fileCacheHandler *file.CacheHand
 	}
 	fileInfoCache := lru.NewCache(sizeInBytes)
 
-	cacheDir := string(cfg.MountConfig.CacheDir)
+	cacheBaseDir := string(cfg.MountConfig.CacheDir)
 	// Adding a new directory inside cacheDir to keep file-cache separate from
 	// metadata cache if and when we support storing metadata cache on disk in
 	// the future.
-	cacheDir = path.Join(cacheDir, cacheutil.FileCache)
+	fileCacheDir := path.Join(cacheBaseDir, cacheutil.FileCache)
+	metaCacheDir := path.Join(cacheBaseDir, cacheutil.MetaCache)
 
 	filePerm := cacheutil.DefaultFilePerm
 	dirPerm := cacheutil.DefaultDirPerm
 
-	cacheDirErr := cacheutil.CreateCacheDirectoryIfNotPresentAt(cacheDir, dirPerm)
-	if cacheDirErr != nil {
-		return nil, fmt.Errorf("createFileCacheHandler: while creating file cache directory: %w", cacheDirErr)
+	fileCacheDirErr := cacheutil.CreateCacheDirectoryIfNotPresentAt(fileCacheDir, dirPerm)
+	if fileCacheDirErr != nil {
+		return nil, fmt.Errorf("createFileCacheHandler: while creating file cache directory: %w", fileCacheDirErr)
 	}
 
-	jobManager := downloader.NewJobManager(fileInfoCache, filePerm, dirPerm, cacheDir,
+	metaCacheDirErr := cacheutil.CreateCacheDirectoryIfNotPresentAt(metaCacheDir, dirPerm)
+	if metaCacheDirErr != nil {
+		return nil, fmt.Errorf("createFileCacheHandler: while creating meta cache directory: %w", metaCacheDirErr)
+	}
+
+	jobManager := downloader.NewJobManager(fileInfoCache, filePerm, dirPerm, fileCacheDir,
 		cfg.SequentialReadSizeMb, &cfg.MountConfig.FileCacheConfig)
 	fileCacheHandler = file.NewCacheHandler(fileInfoCache, jobManager,
-		cacheDir, filePerm, dirPerm)
+		fileCacheDir, filePerm, dirPerm)
 	return
 }
 
